@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KASE Executive Placement & Talent Intelligence Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script>
+tailwind.config = { theme: { extend: { colors: { kase: { DEFAULT: '#0e5774', dark: '#0a3f55', light: '#14749a', accent: '#f39c12', bg: '#f8fafc' } } } } };
+</script>
+<style>
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+tr:hover { background-color: #f1f5f9; }
+</style>
+</head>
+<body class="bg-kase-bg text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+<header class="bg-kase text-white shadow-lg sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+    <div>
+      <h1 class="text-xl sm:text-2xl font-bold tracking-tight">Placement Division Master Dashboard</h1>
+      <p class="text-xs text-sky-200">Kerala Academy for Skills Excellence (Govt. of Kerala)</p>
+    </div>
+    <div class="flex items-center space-x-3">
+      <button onclick="exportTableToCSV('kase_recruiters_master.csv')" class="bg-white/15 hover:bg-white/20 text-white text-xs font-semibold py-2 px-3 rounded-md transition flex items-center gap-1.5 border border-white/20">
+        <i class="fa-solid fa-file-excel"></i> Export All CSV
+      </button>
+      <div class="bg-sky-900/60 text-sky-100 text-xs px-3 py-1.5 rounded-md border border-sky-700/50 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span id="liveDbBadge">Live Database</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="bg-white shadow-sm border-b border-slate-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto space-x-2 sm:space-x-8 py-3">
+    <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn px-3 py-2 rounded-lg text-sm font-semibold transition bg-kase text-white flex items-center gap-2 whitespace-nowrap shadow-sm"><i class="fa-solid fa-chart-pie"></i> Executive Overview</button>
+    <button onclick="switchTab('recruiters')" id="btn-recruiters" class="tab-btn px-3 py-2 rounded-lg text-sm font-medium transition text-slate-600 hover:text-kase hover:bg-slate-50 flex items-center gap-2 whitespace-nowrap"><i class="fa-solid fa-building"></i> Industry Recruiters (<span id="tabRecruiterCount">0</span>)</button>
+    <button onclick="switchTab('talent')" id="btn-talent" class="tab-btn px-3 py-2 rounded-lg text-sm font-medium transition text-slate-600 hover:text-kase hover:bg-slate-50 flex items-center gap-2 whitespace-nowrap"><i class="fa-solid fa-users-rectangle"></i> State Talent Pipeline</button>
+    <button onclick="switchTab('associations')" id="btn-associations" class="tab-btn px-3 py-2 rounded-lg text-sm font-medium transition text-slate-600 hover:text-kase hover:bg-slate-50 flex items-center gap-2 whitespace-nowrap"><i class="fa-solid fa-handshake"></i> Industry Associations</button>
+    <button onclick="switchTab('roundtables')" id="btn-roundtables" class="tab-btn px-3 py-2 rounded-lg text-sm font-medium transition text-slate-600 hover:text-kase hover:bg-slate-50 flex items-center gap-2 whitespace-nowrap"><i class="fa-solid fa-calendar-days"></i> Sector Roundtables</button>
+  </div>
+</nav>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+
+  <div id="tab-dashboard" class="tab-content active space-y-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-kase flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Recruiters Mapped</p>
+          <h3 class="text-2xl font-bold text-slate-800 mt-1" id="kpiTotalRecruiters">-</h3>
+          <span class="text-xs text-emerald-600 font-medium"><i class="fa-solid fa-check-double"></i> 10 per Sector</span>
+        </div>
+        <div class="bg-kase/10 text-kase p-3.5 rounded-xl text-xl"><i class="fa-solid fa-building-user"></i></div>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-amber-500 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Comprehensive Sectors</p>
+          <h3 class="text-2xl font-bold text-slate-800 mt-1" id="kpiSectors">-</h3>
+          <span class="text-xs text-amber-600 font-medium">Domain Coverage</span>
+        </div>
+        <div class="bg-amber-500/10 text-amber-600 p-3.5 rounded-xl text-xl"><i class="fa-solid fa-layer-group"></i></div>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-sky-500 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Annual Enrolled Graduates</p>
+          <h3 class="text-2xl font-bold text-slate-800 mt-1">~2.7 Lakh+</h3>
+          <span class="text-xs text-sky-600 font-medium">Across Engineering, ITI & Poly</span>
+        </div>
+        <div class="bg-sky-500/10 text-sky-600 p-3.5 rounded-xl text-xl"><i class="fa-solid fa-graduation-cap"></i></div>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-purple-500 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Industry Associations</p>
+          <h3 class="text-2xl font-bold text-slate-800 mt-1" id="kpiAssoc">-</h3>
+          <span class="text-xs text-purple-600 font-medium">GTech, CII, FICCI, KSSIA, CREDAI</span>
+        </div>
+        <div class="bg-purple-500/10 text-purple-600 p-3.5 rounded-xl text-xl"><i class="fa-solid fa-network-wired"></i></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-slate-200 flex flex-col">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-chart-bar text-kase"></i> Sector-Wise Recruiter Benchmark</h3>
+          <span class="text-xs text-slate-400">Scroll chart to view all sectors</span>
+        </div>
+        <div class="overflow-y-auto max-h-96 pr-2">
+          <div class="relative" style="height:1200px;"><canvas id="sectorChart"></canvas></div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200 flex flex-col justify-between">
+        <div>
+          <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i class="fa-solid fa-chart-pie text-kase"></i> Recruiter Category Breakdown</h3>
+          <div class="relative h-72 flex justify-center items-center"><canvas id="tierChart"></canvas></div>
+        </div>
+        <div class="mt-4 pt-4 border-t border-slate-100 text-xs text-slate-500 space-y-1.5">
+          <div class="flex justify-between"><span>Total Companies Mapped:</span><strong class="text-slate-800" id="kpiTotal2">-</strong></div>
+          <div class="flex justify-between"><span>Minimum per Sector:</span><strong class="text-emerald-600">10 Companies</strong></div>
+          <div class="flex justify-between"><span>Statewide Coverage:</span><strong class="text-slate-800">All 14 Districts</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-recruiters" class="tab-content space-y-6">
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div>
+          <h2 class="text-xl font-bold text-slate-800">Master Industry Recruiter Directory</h2>
+          <p class="text-sm text-slate-500">Showing <span id="filteredCount" class="font-bold text-kase">0</span> employers.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <div class="relative flex-grow md:w-72">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fa-solid fa-search"></i></span>
+            <input type="text" id="recruiterSearch" onkeyup="filterRecruiters()" placeholder="Search company, role, location..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-kase">
+          </div>
+          <select id="sectorFilter" onchange="filterRecruiters()" class="py-2 px-3 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-kase max-w-xs"></select>
+        </div>
+      </div>
+      <div class="overflow-x-auto border border-slate-200 rounded-lg max-h-[650px]">
+        <table id="recruitersTable" class="min-w-full divide-y divide-slate-200 text-left text-sm">
+          <thead class="bg-kase text-white sticky top-0 z-10">
+            <tr>
+              <th class="py-3 px-4 font-semibold">#</th><th class="py-3 px-4 font-semibold">Company Name</th><th class="py-3 px-4 font-semibold">Focus Sector</th><th class="py-3 px-4 font-semibold">Category</th><th class="py-3 px-4 font-semibold">Kerala Base</th><th class="py-3 px-4 font-semibold">Core Operations</th><th class="py-3 px-4 font-semibold">Key Roles Recruited</th><th class="py-3 px-4 font-semibold">Est. Hiring</th><th class="py-3 px-4 font-semibold">Qualification</th><th class="py-3 px-4 font-semibold">Contact / Portal</th>
+            </tr>
+          </thead>
+          <tbody id="recruitersTableBody" class="divide-y divide-slate-200 bg-white text-slate-700"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-talent" class="tab-content space-y-6">
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+      <div class="mb-6">
+        <h2 class="text-xl font-bold text-slate-800">State Talent Pipeline (Academia Side)</h2>
+        <p class="text-sm text-slate-500">Consolidated institutional baseline statistics across academic streams in Kerala.</p>
+      </div>
+      <div class="overflow-x-auto border border-slate-200 rounded-lg">
+        <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+          <thead class="bg-kase text-white">
+            <tr>
+              <th class="py-3 px-4 font-semibold">#</th><th class="py-3 px-4 font-semibold">Academic Stream</th><th class="py-3 px-4 font-semibold">Governing Body / Univ</th><th class="py-3 px-4 font-semibold">Total Institutions</th><th class="py-3 px-4 font-semibold">Annual Intake (Seats)</th><th class="py-3 px-4 font-semibold">Approx. Enrolled</th><th class="py-3 px-4 font-semibold">Approx. Pass-outs/Yr</th><th class="py-3 px-4 font-semibold">Estimated Placements</th><th class="py-3 px-4 font-semibold">Primary Data Source</th>
+            </tr>
+          </thead>
+          <tbody id="talentTableBody" class="divide-y divide-slate-200 bg-white text-slate-700"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-associations" class="tab-content space-y-6">
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+      <div class="mb-6">
+        <h2 class="text-xl font-bold text-slate-800">Industry Associations & Sectoral Councils</h2>
+        <p class="text-sm text-slate-500">Key institutional bodies and sector councils for partnership and cluster engagement.</p>
+      </div>
+      <div class="overflow-x-auto border border-slate-200 rounded-lg">
+        <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+          <thead class="bg-kase text-white">
+            <tr>
+              <th class="py-3 px-4 font-semibold">#</th><th class="py-3 px-4 font-semibold">Association Name</th><th class="py-3 px-4 font-semibold">Sector Represented</th><th class="py-3 px-4 font-semibold">Chapter Location</th><th class="py-3 px-4 font-semibold">Member Companies</th><th class="py-3 px-4 font-semibold">Contact / Secretariat</th><th class="py-3 px-4 font-semibold">Collaboration Scope</th>
+            </tr>
+          </thead>
+          <tbody id="associationsTableBody" class="divide-y divide-slate-200 bg-white text-slate-700"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-roundtables" class="tab-content space-y-6">
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+      <div class="mb-6">
+        <h2 class="text-xl font-bold text-slate-800">Monthly Sectoral Roundtable Calendar ("Industry Connect Series")</h2>
+        <p class="text-sm text-slate-500">Structured 2.5-hour monthly roundtables bringing together top recruiters by sector cluster.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="roundtableContainer"></div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="bg-slate-800 text-slate-400 py-6 mt-12 border-t border-slate-700">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs">
+    <p>Kerala Academy for Skills Excellence (KASE) - Placement Division & Talent Intelligence Cell</p>
+    <p id="footerNote">Master Database v5.1</p>
+  </div>
+</footer>
+
+<!-- ===== SCRIPT 1: DATA ===== -->
+<script>
+/* PASTE YOUR ENTIRE ORIGINAL BLOCK HERE, REPLACING THIS LINE:
+   const sectorDatabase = { ... };
+   (from "const sectorDatabase = {" down to its closing "};" only) */
+const sectorDatabase = {};
+
+const talentData = [
+  [1, "Engineering (B.Tech / B.E.)", "APJ Abdul Kalam Technological University (KTU) / AICTE / CUSAT", "~155 - 160 Colleges (9 Govt, 3 Aided, ~145 Pvt/Self-Financing)", "~52,000 - 55,000 Seats", "~32,000 - 36,000 Enrolled", "~22,000 - 25,000 Graduates/Yr", "~11,000 - 14,000 Placed/Yr", "AICTE Dashboard / KTU Annual Report / CEE Kerala"],
+  [2, "Polytechnic (3-Year Engineering Diploma)", "Directorate of Technical Education (DTE Kerala) / SBTE", "~83 Institutions (~51 Govt/Aided + ~32 Pvt Self-Financing)", "~17,000 - 18,500 Seats", "~15,500 - 16,500 Enrolled", "~11,000 - 13,000 Pass-outs/Yr", "~6,500 - 8,500 Placed/Yr (Rest opt for B.Tech Lateral Entry)", "DTE Kerala / SITTTR Records"],
+  [3, "ITI (Craftsmen Training Scheme - 1 & 2 Yr Trades)", "Industrial Training Department (DET Kerala) / NCVT / SCVT", "~540 ITIs (104 Govt ITIs + ~436 Private ITIs)", "~68,000 - 75,000 Seats", "~55,000 - 62,000 Enrolled", "~42,000 - 48,000 Pass-outs/Yr", "~22,000 - 28,000 Placed/Apprenticeship", "DET Kerala / NCVT MIS Portal / Economic Review"],
+  [4, "Arts, Science & Commerce (BA / B.Sc / B.Com / BCA / BBA)", "Kerala Univ, MG Univ, Calicut Univ, Kannur Univ", "~950+ Affiliated Colleges (Govt, Aided & Unaided)", "~2,10,000+ Seats", "~1,65,000 - 1,80,000 Enrolled", "~1,25,000 - 1,40,000 Graduates/Yr", "~25,000 - 35,000 Direct Jobs (High % pursue PG/PSC/B.Ed)", "AISHE (All India Survey on Higher Education) / KSHEC"],
+  [5, "Nursing & Paramedical (B.Sc Nursing / GNM / Allied Health)", "KUHS (Kerala University of Health Sciences) / KNMC / DME", "~220+ Nursing Colleges & GNM Schools", "~14,000 - 16,000 Seats", "~14,000+ Enrolled (Near 100% Occupancy)", "~12,500 - 14,000 Graduates/Yr", "~11,500 - 13,000 Placed (85-95% Domestic + Global Absorption)", "KUHS / Kerala Nurses & Midwives Council (KNMC)"],
+  [6, "Hospitality, Hotel Management & Craft Courses", "NCHMCT / Tourism Dept (KITTS / FCI) / Universities", "~45 - 60 Dedicated Institutes + College Depts", "~6,000 - 7,500 Seats", "~5,500 Enrolled", "~4,500 - 5,200 Pass-outs/Yr", "~3,800 - 4,500 Placed", "Dept of Tourism / KITTS / University Data"]
+];
+
+const associationsData = [
+  [1, "GTech (Group of Technology Companies)", "Information Technology, AI, Cybersecurity, ER&D", "Thiruvananthapuram (Technopark) / Kochi", "300+ IT Companies (80% of Kerala IT workforce)", "Secretary / CEO, GTech Secretariat", "Monthly Roundtables for Cybersecurity, AI, EV Software & IT"],
+  [2, "CII (Confederation of Indian Industry) - Kerala State Council", "Large & Medium Manufacturing, Infra, Core Engg, Services", "Kochi (Panampilly Nagar)", "280+ Major Corporate & Industrial Members", "State Head - CII Kerala", "Top 100 Private Recruiter Conclave & Sectoral Panels"],
+  [3, "FICCI - Kerala State Council", "Corporate, Healthcare, Hospitality, Agro-Processing, Industry", "Kochi", "150+ Industry Leaders", "Head - FICCI Kerala State Council", "Industry-Academia Skill Alignment"],
+  [4, "KSSIA (Kerala State Small Industries Association)", "MSMEs, Welding, Fabrication, Plastics, Wood, General Mfg", "Kochi + All 14 District Chapters", "10,000+ MSME Manufacturing Units", "State President / General Secretary", "ITI / Diploma Bulk Placement in Fabrication, Welding & Manufacturing"],
+  [5, "CREDAI Kerala (Confederation of Real Estate Developers)", "Real Estate, Construction, MEP, Civil Infrastructure", "Kochi / Trivandrum / Kozhikode Chapters", "200+ Major Builders & Developers", "Secretary General - CREDAI Kerala", "Construction, Real Estate & Civil/MEP Skill Demand Mapping"],
+  [6, "BAI (Builders Association of India) - Kerala", "Civil Contracting, PWD/NHAI Infrastructure Contractors", "Kochi / State Chapters", "500+ Infrastructure & Civil Contractors", "State Chairman, BAI Kerala", "Infra, Heavy Equipment, Surveying & Civil Technician Hiring"],
+  [7, "Maker Village & KSUM Hardware Ecosystem", "Robotics, Drones, IoT, ESDM, SpaceTech & DeepTech", "Kochi (Kalamassery) & Trivandrum", "100+ DeepTech & Hardware Startups", "CEO - Maker Village / KSUM Industry Link", "Emerging Tech Roundtable (Robotics, Drones & EV Startups)"],
+  [8, "ACMA / SAEINDIA / FADA Kerala Chapters", "Automotive Components, EV Powertrain, Dealership Networks", "Thiruvananthapuram / Kochi", "250+ Mobility Tech & Auto Dealership Groups", "Regional Coordinator / State Chairperson", "EV & Automotive Technician Skill Connect"],
+  [9, "KMA (Kerala Management Association)", "Cross-Sector Corporate Management, BFSI, Retail, Staffing", "Kochi (Management House, Panampilly Nagar)", "1,200+ Corporate Leaders & HR Heads", "Honorary Secretary / Executive Director", "HR Conclaves & Top Private Recruiter Access"],
+  [10, "SEAI (Seafood Exporters Association of India) - Kerala Region", "Fisheries, Seafood Processing & Cold-Chain Logistics", "Kochi (Willingdon Island / Aroor)", "120+ Marine Export Houses", "Regional President - SEAI Kerala", "Refrigeration (R&AC), Food Safety & Marine Processing Placements"],
+  [11, "UPASI / APK (Association of Planters of Kerala)", "Plantations (Tea, Rubber, Spices, Coffee)", "Kochi / Munnar / Kottayam", "150+ Major Plantation Estates & Factories", "Secretary - APK", "Plantation Factory Technicians & Agri-Supervisor Placements"],
+  [12, "AKGSMA (All Kerala Gold & Silver Merchants Association)", "Gems, Jewellery Manufacturing & Gold Retail", "Thrissur / Kochi / Kozhikode", "5,000+ Jewellery Retail & Manufacturing Units", "State General Secretary", "CAD Jewellery Design, Hallmarking & Retail Placement"],
+  [13, "SOPMA (South Indian Plywood Manufacturers) & Furniture Consortium", "Furniture, Wood, Timber & Modular Interiors", "Perumbavoor / Nilambur / Kochi", "400+ Plywood & Automated Furniture Factories", "President - SOPMA / FUCOK", "CNC Woodworking, Boiler & Electrical Technician Absorption"],
+  [14, "AHPI (Association of Healthcare Providers India) - Kerala Chapter", "Healthcare, Private Hospitals & Diagnostics", "Kochi / Trivandrum / Kozhikode", "200+ Accredited Multi-Specialty Hospitals", "State President - AHPI Kerala", "Nursing, Paramedical, Biomedical & Hospital Facility Tech Hiring"],
+  [15, "SKHF / KTM (Kerala Travel Mart Society) & SIHRA", "Hospitality, Hotels, Resorts, Aviation & Tourism", "Kochi / Trivandrum / Kumarakom", "600+ Classified Hotels, Resorts & Tour Operators", "Secretary - KTM Society", "Culinary, Front Office, Housekeeping & Resort MEP Placements"]
+];
+
+const roundtablesData = [
+  { month: "Month 1", title: "Automotive, EV & Clean Energy Mobility", anchor: "Tata Elxsi, Acsia, Visteon, Nissan Digital, GOEC, ChargeMOD, Hykon, KAL, Popular/Indus EV Service, Tata Power Solar", agenda: "Reviewing 12-month EV battery, BMS, solar microgrid, charging infrastructure & dealership HV service hiring forecasts." },
+  { month: "Month 2", title: "Robotics, Drones, Defence & SpaceTech", anchor: "Genrobotics, Asimov, Fuselage, EyeROV, Inker, BATL (BrahMos), VSSC Aero Cluster, SpaceTug, Maker Village", agenda: "Mapping deep-tech hiring requirements, DGCA drone pilot standards, CNC aerospace machining, and ROS2 developer demand." },
+  { month: "Month 3", title: "Welding, Shipbuilding, Oil & Gas & Heavy Engg", anchor: "Cochin Shipyard, BPCL Kochi Refinery EPCs, Peekay Steel, SIFL, KMML, Kanjikode/Edayar Clusters, KSSIA", agenda: "Aligning ITI Welder/Fitter/Machinist training modules with 6G TIG/MIG standards, NDT, and refinery/shipyard requirements." },
+  { month: "Month 4", title: "IT, AI & Data Science, Cybersecurity & EdTech", anchor: "UST, TCS, Infosys, IBS, QBurst, EY GDS, Securin, Beagle Security, Xylem Learning, Entri, GTech", agenda: "Assessing GenAI, Data Engineering, SOC/VAPT analyst, and EdTech product developer requirements across Kerala IT parks." },
+  { month: "Month 5", title: "Construction, Real Estate, Rail/Metro & Ports", anchor: "ULCCS, RDS Projects, CVCC, Sobha, Asset Homes, KMRL, Vizhinjam Port, Kone, Blue Star, CREDAI & BAI", agenda: "Connecting civil, BIM, OHE/Metro traction, port crane automation, and HVAC/lift MEP technicians with major infra projects." },
+  { month: "Month 6", title: "Food, Agri, Marine, Rubber/Plastics & Traditional", anchor: "Synthite, Eastern, Milma, Kitex, Apollo Tyres, MRF, VKC, Choice Seafoods, NC John Coir, VLC Cashews", agenda: "Mapping industrial automation, boiler/refrigeration (R&AC), polymer moulding, and QC chemist demand across Kerala manufacturing." },
+  { month: "Month 7", title: "Healthcare, Pharma, Biotech & Hospitality", anchor: "Aster DM, KIMSHEALTH, Amrita, Agappe, Dentcare, Terumo Penpol, Kottakkal AVS, HLL, CGH Earth, Taj/Marriott", agenda: "Streamlining domestic and global absorption of nurses, biomedical technicians, GMP pharma operators, and hospitality graduates." },
+  { month: "Month 8", title: "BFSI, Retail, Jewellery, Telecom & Staffing", anchor: "Federal Bank, SIB, Muthoot, Lulu Group, MyG, Malabar Gold, Kalyan, Jio/Airtel, K-FON, TeamLease/Quess", agenda: "High-volume graduate placement drives for banking, retail management, CAD jewellery, 5G fiber optics, and enterprise staffing." }
+];
+</script>
+
+<!-- ===== SCRIPT 2: LOGIC ===== -->
+<script>
+/* Auto-corrections applied while loading (so the data block needs no edits) */
+const textFixes = [
+  ["Trivandapuram", "Thiruvananthapuram"],
+  ["Pothys /achandran / Saravana", "Pothys / Saravana"],
+  ["\u00C1va /Ernakulam", "Ernakulam"],
+  ["KochiMEA", "Kochi MEA"]
+];
+function clean(v) {
+  let s = String(v).trim();
+  textFixes.forEach(function (f) { s = s.split(f[0]).join(f[1]); });
+  return s;
+}
+
+const all41Sectors = Object.keys(sectorDatabase);
+const recruitersData = [];
+let globalIdx = 1;
+all41Sectors.forEach(function (sectorName) {
+  sectorDatabase[sectorName].forEach(function (c) {
+    recruitersData.push([globalIdx++, clean(c[0]), sectorName, clean(c[1]), clean(c[2]), clean(c[3]), clean(c[4]), clean(c[5]), clean(c[6]), clean(c[7])]);
+  });
+});
+
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-content').forEach(function (el) { el.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function (el) {
+    el.classList.remove('bg-kase', 'text-white', 'shadow-sm');
+    el.classList.add('text-slate-600', 'hover:text-kase', 'hover:bg-slate-50');
+  });
+  document.getElementById('tab-' + tabId).classList.add('active');
+  const b = document.getElementById('btn-' + tabId);
+  b.classList.remove('text-slate-600', 'hover:text-kase', 'hover:bg-slate-50');
+  b.classList.add('bg-kase', 'text-white', 'shadow-sm');
+}
+
+function populateSectorDropdown() {
+  const select = document.getElementById('sectorFilter');
+  select.innerHTML = '<option value="">All ' + all41Sectors.length + ' Sectors (' + recruitersData.length + ')</option>';
+  all41Sectors.forEach(function (sec) {
+    const count = recruitersData.filter(function (r) { return r[2] === sec; }).length;
+    const opt = document.createElement('option');
+    opt.value = sec;
+    opt.textContent = sec + ' (' + count + ')';
+    select.appendChild(opt);
+  });
+}
+
+function renderRecruiters(data) {
+  const tbody = document.getElementById('recruitersTableBody');
+  tbody.innerHTML = '';
+  document.getElementById('filteredCount').textContent = data.length;
+  if (data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="10" class="py-8 text-center text-slate-400">No companies match the selected filter criteria.</td></tr>';
+    return;
+  }
+  data.forEach(function (row) {
+    const cat = row[3].includes('Top 100') ? 'bg-emerald-50 text-emerald-700' : (row[3].includes('Startup') ? 'bg-purple-50 text-purple-700' : 'bg-amber-50 text-amber-700');
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td class="py-3 px-4 font-medium text-slate-500">' + row[0] + '</td>' +
+      '<td class="py-3 px-4 font-bold text-slate-800">' + row[1] + '</td>' +
+      '<td class="py-3 px-4"><span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-50 text-kase whitespace-nowrap">' + row[2] + '</span></td>' +
+      '<td class="py-3 px-4"><span class="px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ' + cat + '">' + row[3] + '</span></td>' +
+      '<td class="py-3 px-4 text-slate-600 text-xs">' + row[4] + '</td>' +
+      '<td class="py-3 px-4 text-slate-600 text-xs">' + row[5] + '</td>' +
+      '<td class="py-3 px-4 text-slate-600 text-xs">' + row[6] + '</td>' +
+      '<td class="py-3 px-4 font-semibold text-slate-800 whitespace-nowrap">' + row[7] + '</td>' +
+      '<td class="py-3 px-4 text-slate-600 text-xs">' + row[8] + '</td>' +
+      '<td class="py-3 px-4 text-sky-700 font-medium text-xs">' + row[9] + '</td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function renderSimpleTable(bodyId, rows, classes) {
+  const tbody = document.getElementById(bodyId);
+  tbody.innerHTML = '';
+  rows.forEach(function (row) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = row.map(function (cell, i) { return '<td class="py-3 px-4 ' + classes[i] + '">' + cell + '</td>'; }).join('');
+    tbody.appendChild(tr);
+  });
+}
+
+function renderTalent() {
+  renderSimpleTable('talentTableBody', talentData, [
+    'font-medium text-slate-500', 'font-bold text-slate-800', 'text-slate-600 text-xs', 'text-slate-700',
+    'font-semibold text-kase', 'text-slate-700', 'font-semibold text-slate-800', 'text-emerald-700 font-medium', 'text-slate-500 text-xs'
+  ]);
+}
+
+function renderAssociations() {
+  renderSimpleTable('associationsTableBody', associationsData, [
+    'font-medium text-slate-500', 'font-bold text-slate-800', 'text-slate-700 text-xs', 'text-slate-600',
+    'font-semibold text-kase', 'text-slate-600 text-xs', 'text-slate-700 text-xs font-medium'
+  ]);
+}
+
+function renderRoundtables() {
+  const container = document.getElementById('roundtableContainer');
+  container.innerHTML = '';
+  roundtablesData.forEach(function (item) {
+    const card = document.createElement('div');
+    card.className = 'bg-slate-50 border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between';
+    card.innerHTML =
+      '<div><div class="flex justify-between items-center mb-3">' +
+      '<span class="bg-kase text-white text-xs font-bold px-2.5 py-1 rounded-md">' + item.month + '</span>' +
+      '<span class="text-xs font-semibold text-slate-400"><i class="fa-solid fa-clock"></i> 2.5 Hours</span></div>' +
+      '<h4 class="text-base font-bold text-slate-800 mb-2">' + item.title + '</h4>' +
+      '<p class="text-xs text-slate-600 mb-4"><strong class="text-slate-700">Anchor Invitees:</strong> ' + item.anchor + '</p></div>' +
+      '<div class="bg-white p-3 rounded-lg border border-slate-200 text-xs text-slate-700"><strong>Focus Agenda:</strong> ' + item.agenda + '</div>';
+    container.appendChild(card);
+  });
+}
+
+function filterRecruiters() {
+  const search = document.getElementById('recruiterSearch').value.toLowerCase();
+  const sector = document.getElementById('sectorFilter').value;
+  const filtered = recruitersData.filter(function (row) {
+    const hit = [1, 2, 4, 5, 6].some(function (i) { return row[i].toLowerCase().includes(search); });
+    return hit && (sector === '' || row[2] === sector);
+  });
+  renderRecruiters(filtered);
+}
+
+/* Exports ALL records, regardless of the current filter */
+function exportTableToCSV(filename) {
+  const header = ["#", "Company", "Sector", "Category", "Kerala Base", "Core Operations", "Key Roles", "Est. Hiring", "Qualification", "Contact"];
+  const esc = function (v) { return '"' + String(v).replace(/"/g, '""').trim() + '"'; };
+  const lines = [header.map(esc).join(",")];
+  recruitersData.forEach(function (r) { lines.push(r.map(esc).join(",")); });
+  const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function initCharts() {
+  const counts = all41Sectors.map(function (sec) { return recruitersData.filter(function (r) { return r[2] === sec; }).length; });
+  new Chart(document.getElementById('sectorChart').getContext('2d'), {
+    type: 'bar',
+    data: { labels: all41Sectors, datasets: [{ label: 'Recruiters Mapped', data: counts, backgroundColor: '#0e5774', borderRadius: 4, barThickness: 16 }] },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true, max: 12, ticks: { stepSize: 2 } }, y: { grid: { display: false }, ticks: { font: { size: 11 } } } }
+    }
+  });
+  const top = recruitersData.filter(function (r) { return r[3].includes('Top 100'); }).length;
+  const spec = recruitersData.filter(function (r) { return r[3].includes('Sector Specific'); }).length;
+  const start = recruitersData.filter(function (r) { return r[3].includes('Emerging Startup'); }).length;
+  new Chart(document.getElementById('tierChart').getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Top 100 Anchor Firms (' + top + ')', 'Sector-Specific Units (' + spec + ')', 'Emerging Startups (' + start + ')'],
+      datasets: [{ data: [top, spec, start], backgroundColor: ['#0e5774', '#f39c12', '#10b981'], borderWidth: 2, borderColor: '#ffffff' }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
+  });
+}
+
+function setCounts() {
+  const n = recruitersData.length, s = all41Sectors.length;
+  document.getElementById('kpiTotalRecruiters').textContent = n + ' Companies';
+  document.getElementById('kpiTotal2').textContent = n + ' Employers';
+  document.getElementById('kpiSectors').textContent = s + ' Sectors';
+  document.getElementById('kpiAssoc').textContent = associationsData.length + ' Bodies';
+  document.getElementById('tabRecruiterCount').textContent = n;
+  document.getElementById('liveDbBadge').textContent = 'Live Database (' + n + ' Recruiters | ' + s + ' Sectors)';
+  document.getElementById('footerNote').textContent = 'Master Database v5.1 (' + n + ' Recruiters across ' + s + ' Sectors)';
+}
+
+window.addEventListener('load', function () {
+  [setCounts, populateSectorDropdown, function () { renderRecruiters(recruitersData); }, renderTalent, renderAssociations, renderRoundtables, initCharts]
+    .forEach(function (fn) { try { fn(); } catch (e) { console.error('Init error in', fn.name, e); } });
+});
+</script>
+</body>
+</html>
